@@ -1,0 +1,122 @@
+#!/bin/bash
+#Matrix Application created by Daniel Rotenberg
+#OSU344 - HW Assignment 1
+
+tempCol="tempColFile"
+tempRow="tempRowFile"
+
+
+# Dims function should print the dimensions of the matrix as the number
+# of rows, followed by a space, then the number of columns
+
+dims() {
+	# echo "The dimensions of that matrix is:"
+	rowTotal=$(wc -l < $file)
+	colTotal=$(head -1 $file | wc -w)
+	echo -e "$rowTotal $colTotal"
+	exit 0
+}
+
+if [ $1 = "dims" ]
+	then
+		if [ $# -gt 2 ] # if there are more than 2 command line arguments (function call + file)
+			then
+			echo "That is the incorrect number of arguments" >&2  #redirect message to stderr
+			exit 1
+		fi
+
+		if [ ! -e $2 ]
+			then
+			echo -e "$2 does not exist" >&2 # tell user that the file doesn't exit and redirect stdout to stderr
+			exit 1
+		fi
+
+		if [ $# -eq 2 ] # if there is the correct number of arguments (1) then run dims
+			then
+			file="$2"
+		fi
+	
+        if [ $# -eq 1 ]
+        then
+		    file=$1
+            cat > $file
+        fi
+	
+	dims file 
+fi
+
+# Transpose function should reflect the elements of the matrix along the main diagonal.
+# Thus, an MxN matrix will become an NxM matrix and the values along the main diagonal
+# will remain unchanged.
+
+transpose() {
+	totalCol=$( head -1 $file | wc -w)	
+	# echo "Total Cols: $totalCol"
+	totalRows=$( wc -l < $file)
+	# echo "Total Rows: $totalRows"
+	i=1
+	
+	# appened each number onto the end of a temp column file
+	while [[ $i -le totalCol ]]
+	do
+		cut -f $i $file > $tempCol
+		cat $tempCol | tr '\n' '\t' >> $tempRow$$
+		truncate -s-1 $tempRow$$
+		echo >> $tempRow$$
+		(( i++ ))
+	done
+
+	cat < $tempRow$$
+
+#	while [[ $i -le totalCol ]]
+#	do
+#		cut -f $i $file >> $tempCol$$
+#		(( i++ ))
+#	done
+
+	# convert column file back into row file
+#	cat $tempCol$$ | tr '\n' '\t' > "$tempRow$$"
+#	echo >> "$tempRow$$"
+	rm -f $tempRow$$
+	rm -f $tempCol	
+	exit 0
+}
+
+if [ $1 = "transpose" ]
+	then
+		if [ $# -gt 2 ] # if there are more than 2 command line arguments (function call + file)
+			then
+			echo "That is the incorrect number of arguments" 1>&2 #redirect message to stderr
+			exit 1
+		fi
+
+		if [ ! -e $2 ]
+			then
+			echo -e "$2 does not exist" 1>&2 # tell user that the file doesn't exit and redirect stdout to stderr
+			exit 1
+		fi
+
+		if [ $# -eq 2 ] # if there is the correct number of arguments (1) then run dims
+			then
+			file="$2"
+		fi
+        
+		if [ ! -r $2 ]
+        then
+			echo -e "$2 is not readable" 1>&2 # tell user that the file is not readable and exit and redirect stdout to stderr
+        	exit 1
+		fi
+
+		transpose file
+fi
+
+# Mean function should take an MxN matrix and return a 1xN row vector, where the first 
+# element is the mean of column one, the second element is the mean of column two, and so on.
+
+# Add should take two MxN matrices and add them together element-wise to produce an MxN matrix.
+# Add should return an error if the matrixes do not have the same dimensions.
+
+# Multiply should take an MxN and NxP matrix and produce an MxP matrix. Note that, unlike 
+# addition, matrix multiplication is not communative. That is A*B != B*A.
+
+$1 "${@:2}"
