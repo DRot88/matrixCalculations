@@ -115,6 +115,97 @@ fi
 
 # Add should take two MxN matrices and add them together element-wise to produce an MxN matrix.
 # Add should return an error if the matrixes do not have the same dimensions.
+add() {
+	while
+		read firstFileLine 0<&3
+		read secondFileLine 0<&4
+	do
+		echo "$firstFileLine" | tr '\n' '\t' >> tmp1	# first file turned into 1 line
+		echo "$secondFileLine" | tr '\n' '\t' >> tmp2	# seconod file turned into 1 line
+	done 3<$1 4<$2
+
+	echo >> "tmp1"
+	echo >> "tmp2"
+
+	cat "tmp1" >> "tmp2"	# combine output
+	
+	maxCols=$( head -1 tmp2 | wc -w)
+
+	i=1
+	colNum=1
+
+	while [ $i -le $maxCols ]
+	do
+		sum=0
+		cut -f $i "tmp2" > "tmp3"	#cut each column and move to new tmp file
+		
+		while read numInTmp3
+		do
+			sum=$(($sum + $numInTmp3)) #get the sum
+		done < "tmp3"
+	
+		echo "$sum" | tr '\n' '\t' >> finalFile # store sum into one file
+	#	echo "Sum = $sum"
+		
+		if [ $(( $i % $fileOneCols )) == 0 ]
+			then
+			truncate -s-1 finalFile
+			echo >> finalFile
+		fi
+
+		(( i++ ))
+		(( colNum++ ))
+	done
+
+	cat < finalFile
+
+	rm -f tmp1
+	rm -f tmp2
+	rm -f tmp3
+	rm -f finalFile
+
+	exit 0 
+}
+
+if [ $1 = "add" ]
+	then
+		if [ $# -ne 3 ] # if there are more than 3 command line arguments (function call + file1 + file2)
+			then
+			echo "That is the incorrect number of arguments" 1>&2 #redirect message to stderr
+			exit 1
+		fi
+
+		if [ ! -r $2 ] || [ ! -r $3 ]
+			then
+			echo "You inluded an unreadable file" >&2
+			exit 1
+		fi
+
+		if [ $# -eq 3 ] # if there are the correct number of arguments
+			then
+			firstFile=$2
+			secondFile=$3
+		fi
+
+		fileOneRows=$( wc -l < $firstFile)
+		fileTwoRows=$( wc -l < $secondFile)
+		fileOneCols=$( head -1 $firstFile | wc -w)
+		fileTwoCols=$( head -1 $secondFile | wc -w)
+	
+	#	echo "f1r = $fileOneRows"
+	#	echo "f2r = $fileTwoRows"
+	#	echo "f1c = $fileOneCols"
+	#	echo "f2c = $fileTwoCols"
+
+		if [ $fileOneRows -ne $fileTwoRows ] || [ $fileOneCols -ne $fileTwoCols ]
+			then
+			echo "The dimensions of each matrix need to be the same" >&2
+			exit 1
+		fi
+
+	add $firstFile $secondFile
+
+fi
 
 # Multiply should take an MxN and NxP matrix and produce an MxP matrix. Note that, unlike 
 # addition, matrix multiplication is not communative. That is A*B != B*A.
