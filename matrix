@@ -112,7 +112,64 @@ fi
 
 # Mean function should take an MxN matrix and return a 1xN row vector, where the first 
 # element is the mean of column one, the second element is the mean of column two, and so on.
+mean() {
+	i=1
+	while [[ $i -le $fileCols ]]
+	do
+		sum=0
+		cut -f $i $file > tmpColFile
 
+		while read lineNums
+		do
+			sum=$(($sum + $lineNums))
+		done < tmpColFile
+		
+		mean=$((($sum + ($fileRows/2)*( ($sum>0)*2-1 )) / $fileRows )) #formula given in instructions
+	#	echo "Mean: $mean"
+		echo $mean >> tempMeanCol
+		(( i++ ))
+	done
+
+		cat tempMeanCol | tr '\n' '\t' >> finalMeanRow #append data from tempMeanCol into a single Row  
+		truncate -s-1 finalMeanRow # remove trailing tab character
+		echo >> finalMeanRow # add new line
+
+		cat < finalMeanRow #ouput results
+
+		#remove files
+		rm -f tempMeanCol
+		rm -f tmpColFile
+		rm -f finalMeanRow
+
+exit 0
+}
+
+
+if [ $1 = "mean" ]
+	then
+		if [ $# -ne 2 ] # if there are more than 2 command line arguments (function call + file1)
+			then
+			echo "That is the incorrect number of arguments" >&2 #redirect message to stderr
+			exit 1
+		fi
+
+		if [ ! -r $2 ]
+			then
+			echo "You inluded an unreadable file" >&2
+			exit 1
+		fi
+
+		if [ $# -eq 2 ] # if there are the correct number of arguments
+			then
+			file=$2
+		fi
+
+		fileRows=$( wc -l < $file)
+		fileCols=$( head -1 $file | wc -w)
+	
+	mean $file
+
+fi
 # Add should take two MxN matrices and add them together element-wise to produce an MxN matrix.
 # Add should return an error if the matrixes do not have the same dimensions.
 add() {
@@ -209,5 +266,43 @@ fi
 
 # Multiply should take an MxN and NxP matrix and produce an MxP matrix. Note that, unlike 
 # addition, matrix multiplication is not communative. That is A*B != B*A.
+multiply() {
+	exit 0
+}
+
+if [ $1 = "multiply" ]
+	then
+		if [ $# -ne 3 ] # if there are more than 3 command line arguments (function call + file1 + file2)
+			then
+			echo "That is the incorrect number of arguments" 1>&2 #redirect message to stderr
+			exit 1
+		fi
+
+		if [ ! -r $2 ] || [ ! -r $3 ]
+			then
+			echo "You inluded an unreadable file" >&2
+			exit 1
+		fi
+
+		if [ $# -eq 3 ] # if there are the correct number of arguments
+			then
+			firstFile=$2
+			secondFile=$3
+		fi
+
+		fileOneRows=$( wc -l < $firstFile)
+		fileTwoRows=$( wc -l < $secondFile)
+		fileOneCols=$( head -1 $firstFile | wc -w)
+		fileTwoCols=$( head -1 $secondFile | wc -w)
+	
+		if [ $fileOneRows -ne $fileTwoCols ] || [ $fileOneCols -ne $fileTwoRows ]
+			then
+			echo "The dimensions of these matrices do not allow for multiplication" >&2
+			exit 1
+		fi
+
+	multiply $firstFile $secondFile
+
+fi
 
 $1 "${@:2}"
